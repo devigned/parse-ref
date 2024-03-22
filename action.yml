@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-action.json
+
+name: "Parse tag reference"
+description: "Parse the tag reference to get the crate, version, and runtime to be released."
+inputs:
+  ref:
+    description: "The git ref to be parsed"
+    required: true
+outputs:
+  crate:
+    description: "The create to be released"
+  version:
+    description: "The version of the crate to be released"
+  runtime:
+    description: "The runtime of the crate to be released"
+  nomatch:
+    description: "true if there was no runtime matched"
+runs:
+  using: "node20"
+  main: "dist/index.js"

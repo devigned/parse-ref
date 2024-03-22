@@ -1,0 +1,54 @@
+name: Continuous Integration
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: build and test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        id: setup-node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Test, lint, format, package
+        id: npm-ci
+        run: npm ci
+
+      - name: Compare Directories
+        id: diff
+        run: |
+          if [ "$(git diff --ignore-space-at-eol --text dist/ | wc -l)" -gt "0" ]; then
+            echo "Detected uncommitted changes after build. See status below:"
+            git diff --ignore-space-at-eol --text dist/
+            exit 1
+          fi
+
+      - name: Test Local Action
+        id: test-action
+        uses: ./
+        with:
+          ref: refs/tags/containerd-shim-wasmtime/v1.2.3
+
+      - name: Test output and fail if wrong
+        if: ${{ steps.test-action.outputs.crate != 'containerd-shim-wasmtime' || steps.test-action.outputs.runtime != 'wasmtime' || steps.test-action.outputs.version != '1.2.3' }}
+        run: |
+          echo "local test of the action failed"
+          echo "crate: '${{ steps.test-action.outputs.crate }}'"
+          echo "runtime: '${{ steps.test-action.outputs.runtime }}'"
+          echo "version: '${{ steps.test-action.outputs.version }}'"
+          exit 1
